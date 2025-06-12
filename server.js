@@ -39,7 +39,7 @@ const swaggerOptions = {
             description: 'API documentation using Swagger',
         },
         servers: [
-            { url: 'http://149.102.137.13:8081' } // Remplacez par l'URL de votre backend
+            { url: 'http://149.102.137.13:3000' } // Remplacez par l'URL de votre backend
         ],
     },
     apis: ['./routes/*.js'], // Location of API routes
