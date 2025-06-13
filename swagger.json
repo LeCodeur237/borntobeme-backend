@@ -7,7 +7,7 @@
   },
   "servers": [
     {
-      "url": "https://born-to-be-me.com:3000"
+      "url": "http://born-to-be-me.com:3000"
     }
   ],
   "paths": {
