@@ -20,8 +20,10 @@ app.use(
       "https://born-to-be-me.com",
       "http://www.born-to-be-me.com",
       "https://www.born-to-be-me.com",
+      "http://localhost:3000",
       "http://localhost:5173",
-      "https://localhost:5173"
+      "http://localhost:8080",
+      "http://localhost:8081",
     ],
     optionsSuccessStatus: 200,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
@@ -62,9 +64,7 @@ const swaggerOptions = {
       version: "1.0.0",
       description: "API documentation using Swagger",
     },
-    servers: [
-      { url: `http://${API_HOST}:${PORT}` },
-    ],
+    servers: [{ url: `http://${API_HOST}:${PORT}` }],
   },
   apis: ["./routes/*.js"], // Location of API routes
 };
