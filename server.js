@@ -17,6 +17,7 @@ app.use(
       "http://149.102.137.13:8080",
       "https://149.102.137.13:8080",
       "https://149.102.137.13:3000",
+      "http://149.102.137.13:3000",
       "http://born-to-be-me.com:8080",
       "https://born-to-be-me.com:8080",
       "http://born-to-be-me.com",
