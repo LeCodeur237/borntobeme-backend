@@ -70,7 +70,7 @@ const swaggerOptions = {
       version: "1.0.0",
       description: "API documentation using Swagger",
     },
-    servers: [{ url: `http://${API_HOST}:${PORT}` }],
+    servers: [{ url: `https://${API_HOST}:${PORT}` }],
   },
   apis: ["./routes/*.js"], // Location of API routes
 };
