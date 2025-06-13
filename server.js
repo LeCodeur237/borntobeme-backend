@@ -20,6 +20,8 @@ app.use(
       "https://born-to-be-me.com",
       "http://www.born-to-be-me.com",
       "https://www.born-to-be-me.com",
+      "http://localhost:5173",
+      "https://localhost:5173"
     ],
     optionsSuccessStatus: 200,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
