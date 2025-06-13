@@ -90,7 +90,7 @@ app.use("/api/borntobeme/auth", authRoutes);
 app.use("/api/borntobeme/articles", articleRoutes);
 
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`Server is running on port ${PORT} with addrress ${API_HOST}`);
   console.log(
     `Swagger documentation available at http://${API_HOST}:${PORT}/api-docs`
   );
