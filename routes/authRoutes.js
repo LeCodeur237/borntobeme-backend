@@ -1,7 +1,8 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const userModel = require('../models/userModels'); // Assuming you have a user model defined
+const { v4: uuidv4 } = require('uuid'); // For generating UUIDs
+const dbPool = require('../db'); // Import MySQL connection pool
 
 const router = express.Router();
 
@@ -191,39 +192,63 @@ const router = express.Router();
 router.post('/add-user', async (req, res) => { // Removed authMiddleware for public registration
     try {
         const { fullname, email, datebirthday, linkphoto, role, password } = req.body;
+        const userRole = role || 'user'; // Default role to 'user'
+
+        // Basic validation (you might want to add more comprehensive validation)
+        if (!fullname || !email || !password || !datebirthday) {
+            return res.status(400).json({ message: 'Missing required fields: fullname, email, password, datebirthday' });
+        }
 
         // Check if user already exists
-        const existingUser = await userModel.findOne({ email });
-        if (existingUser) {
-            return res.status(400).json({ message: 'User already exists' });
+        const [existingUsers] = await dbPool.query('SELECT id FROM users WHERE email = ?', [email]);
+        if (existingUsers.length > 0) {
+            return res.status(400).json({ message: 'User with this email already exists' });
         }
 
         // Hash password
-        const hashedPassword = await bcrypt.hash(password, 10);
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
+        const userId = uuidv4(); // Generate a new UUID for the user
 
-        // Create new user
-        const newUser = new userModel({
-            fullname, email, datebirthday, linkphoto, role, password: hashedPassword
-        });
+        // Insert new user into the database
+        const insertSql = `
+            INSERT INTO users (id, fullname, email, datebirthday, linkphoto, role, password)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        `;
+        await dbPool.query(insertSql, [
+            userId,
+            fullname,
+            email,
+            datebirthday, // Ensure this is in 'YYYY-MM-DD' format for MySQL DATE type
+            linkphoto || null,
+            userRole,
+            hashedPassword
+        ]);
 
-        // Save user to database
-        await newUser.save();
+        // Fetch the newly created user (excluding password) to return in the response
+        const [newUserRows] = await dbPool.query('SELECT id, fullname, email, datebirthday, linkphoto, role, createdAt, updatedAt FROM users WHERE id = ?', [userId]);
+        
+        if (newUserRows.length === 0) {
+            // This should ideally not happen if insert was successful
+            console.error('Failed to retrieve newly registered user for ID:', userId);
+            return res.status(500).json({ message: 'Error registering user: User not found after creation' });
+        }
 
-        // Prepare user object for response (without password)
-        const userResponse = newUser.toObject(); // Or newUser.toJSON()
-        delete userResponse.password;
+        const userResponse = {
+            _id: newUserRows[0].id, // Match Swagger schema's _id
+            ...newUserRows[0]
+        };
+        delete userResponse.id; // remove original id if _id is preferred
 
         res.status(201).json({ message: 'User registered successfully', user: userResponse });
+
     } catch (error) {
         console.error('Error registering user:', error);
-        if (error.name === 'ValidationError') {
-            const errors = Object.values(error.errors).map(err => ({
-                field: err.path,
-                message: err.message,
-            }));
-            return res.status(400).json({ message: 'Validation failed', errors });
+        // MySQL specific error for duplicate entry (e.g., if unique constraint on email is violated)
+        if (error.code === 'ER_DUP_ENTRY') {
+            return res.status(400).json({ message: 'User with this email already exists (DB constraint).' });
         }
-        // Handle other specific errors like duplicate email if not caught by findOne
+        // Add more specific MySQL error handling if needed
         return res.status(500).json({ message: 'Internal server error' });
     }
 });
@@ -267,20 +292,27 @@ router.post('/login', async (req, res) => {
         const { email, password } = req.body;
 
         // Find user by email
-        const user = await userModel.findOne({ email });
+        const [users] = await dbPool.query('SELECT id, email, password, fullname, role, linkphoto FROM users WHERE email = ?', [email]);
+
+        if (users.length === 0) {
+            return res.status(401).json({ message: 'Invalid credentials' });
+        }
+        const user = users[0];
 
         // Check if user exists and password matches
-        if (!user || !(await bcrypt.compare(password, user.password))) {
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
 
         // Generate JWT token
-        const token = jwt.sign({ userId: user._id, email: user.email, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1h' }); // Include user ID and role in token
+        // Ensure JWT_SECRET is set in your .env file
+        const token = jwt.sign({ userId: user.id, email: user.email, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
         res.json({
             token,
             user: {
-                _id: user._id,
+                _id: user.id, // Match Swagger schema's _id
                 email: user.email,
                 linkphoto: user.linkphoto,
                 fullname: user.fullname,
