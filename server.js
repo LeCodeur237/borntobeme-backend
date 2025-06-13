@@ -74,7 +74,7 @@ const swaggerOptions = {
       version: "1.0.0",
       description: "API documentation using Swagger",
     },
-    servers: [{ url: `https://${API_HOST}:${PORT}` }],
+    servers: [{ url: `http://${API_HOST}:${PORT}` }],
   },
   apis: ["./routes/*.js"], // Location of API routes
 };
@@ -96,6 +96,6 @@ app.use("/api/borntobeme/articles", articleRoutes);
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT} with addrress ${API_HOST}`);
   console.log(
-    `Swagger documentation available at https://${API_HOST}:${PORT}/api-docs`
+    `Swagger documentation available at http://${API_HOST}:${PORT}/api-docs`
   );
 });
